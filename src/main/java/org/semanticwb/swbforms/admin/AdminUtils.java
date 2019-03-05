@@ -80,6 +80,44 @@ public class AdminUtils {
                             ret.append(id+"="+vm+";\n");
                         }    
                         ds_cache.addSubObject("ValueMap").addParam("text", ret.toString()).addParam("backend", true).addParam("frontend", true);
+                        
+                        ds=eng.getDataSource("Validator");                        
+                        it=ds.find();
+                        while (it.hasNext()) {
+                            DataObject obj = it.next();
+
+                            String id=obj.getString("id");
+                            String stype=obj.getString("type");
+                            String errorMessage=obj.getString("errorMessage");
+
+                            ret=new StringBuilder();
+                            ret.append("eng.validators[\""+id+"\"] = {");
+                            ret.append("type: \""+stype+"\"");
+                            if(errorMessage!=null)ret.append(", errorMessage: \""+errorMessage.replace("\"", "\\\"")+"\"");
+                            
+                            
+                            DataObject query=new DataObject();
+                            query.addSubObject("data").addParam("validator", obj.getId());
+                            DataObjectIterator it3=eng.getDataSource("ValidatorExt").find(query);
+                            while (it3.hasNext()) {
+                                DataObject feobj = it3.next();
+                                String att=feobj.getString("att");
+                                ret.append(", "+att+": ");
+                                Object value=feobj.get("value");   
+                                String type=feobj.getString("type");   
+                                if("string".equals(type) || "date".equals(type))
+                                {
+                                    ret.append("\""+value.toString().replace("\"", "\\\"")+"\"");                                        
+                                }else
+                                {
+                                    ret.append(""+value);
+                                }
+
+                            }                                                        
+                            
+                            ret.append("};"+"\n");
+                            ds_cache.addSubObject("Validators_"+obj.getString("id")).addParam("text", ret.toString()).addParam("backend", true).addParam("frontend", true);     
+                        }                        
                                                                         
                         ds=eng.getDataSource("DataSource");                        
                         it=ds.find();
@@ -210,7 +248,7 @@ public class AdminUtils {
                                 if(request!=null  && request.trim().length()>0)ret.append("    request: "+request.replace("\n", "\n    ")+","+"\n");
                                 if(response!=null  && response.trim().length()>0)ret.append("    response: "+response.replace("\n", "\n    ")+","+"\n");
                                 ret.append("};"+"\n");
-                                ds_cache.addSubObject("DataProcessor"+obj.getString("id")).addParam("text", ret.toString()).addParam("backend", true).addParam("frontend", false);     
+                                ds_cache.addSubObject("DataProcessor_"+obj.getString("id")).addParam("text", ret.toString()).addParam("backend", true).addParam("frontend", false);     
                             }
 
                             ds=eng.getDataSource("DataService");                        
@@ -229,7 +267,7 @@ public class AdminUtils {
                                 ret.append("    actions: "+actions+","+"\n");
                                 if(service!=null  && service.trim().length()>0)ret.append("    service: "+service.replace("\n", "\n    ")+","+"\n");
                                 ret.append("};"+"\n");
-                                ds_cache.addSubObject("DataService"+obj.getString("id")).addParam("text", ret.toString()).addParam("backend", true).addParam("frontend", false);   
+                                ds_cache.addSubObject("DataService_"+obj.getString("id")).addParam("text", ret.toString()).addParam("backend", true).addParam("frontend", false);   
                             }         
                         }                        
                         ds_engineId=eng.getId();
